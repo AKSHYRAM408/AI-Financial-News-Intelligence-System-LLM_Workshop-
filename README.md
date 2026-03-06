@@ -11,6 +11,8 @@ NEWSDATA.io   HuggingFace          Cosine Similarity       Mistral AI           
   API         all-MiniLM-L6-v2     Score Threshold         Report Gen           Dashboard
 ```
 
+**Refer PIPELINE JPG FOR DETAILED WORKFLOW**
+
 ### Step-by-Step
 
 1. **📰 News API** — Fetches latest financial news from NEWSDATA.io based on user query

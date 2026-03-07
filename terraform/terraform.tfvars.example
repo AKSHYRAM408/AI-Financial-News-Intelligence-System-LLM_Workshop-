@@ -1,0 +1,14 @@
+# AWS Region (us-east-1 has most free tier availability)
+aws_region    = "us-east-1"
+
+# EC2 instance type (t2.micro = free tier eligible)
+instance_type = "t2.micro"
+
+# Optional: Name of your EC2 key pair for SSH access
+# Create one in AWS Console → EC2 → Key Pairs, then put the name here
+# key_name = "my-key-pair"
+
+# ----- API Keys -----
+mistral_api_key  = "your-mistral-api-key"
+newsdata_api_key = "your-newsdata-api-key"
+hf_api_key       = "your-huggingface-api-key"

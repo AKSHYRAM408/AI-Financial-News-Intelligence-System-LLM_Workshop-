@@ -1,7 +1,7 @@
 """
 llm.py — LLM-powered market report generator & investor Q&A.
 
-Sends cleaned article text to an OpenAI-compatible API and returns:
+Uses the Mistral AI Python SDK to generate:
 1. A structured Daily Market Intelligence Report (JSON dict).
 2. An answer to the investor's specific question (plain text).
 """
@@ -12,7 +12,7 @@ import os
 from typing import Dict
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from mistralai import Mistral
 
 load_dotenv()
 
@@ -95,18 +95,14 @@ Provide a clear, well-structured answer based on the articles above."""
 # ---------------------------------------------------------------------------
 
 def _get_client():
-    """Build and return an OpenAI client using env config."""
-    api_key = os.getenv("OPENAI_API_KEY", "")
-    if not api_key or api_key == "your-api-key-here":
-        logger.error("OPENAI_API_KEY is not set.")
-        return None, "API key not configured. Please set OPENAI_API_KEY in your .env file."
+    """Build and return a Mistral client using env config."""
+    api_key = os.getenv("MISTRAL_API_KEY", "") or os.getenv("OPENAI_API_KEY", "")
+    if not api_key or api_key in ("your-api-key-here", "USE MISTRAL API KEY"):
+        logger.error("MISTRAL_API_KEY is not set.")
+        return None, "API key not configured. Please set MISTRAL_API_KEY in your .env file."
 
-    base_url = os.getenv("OPENAI_BASE_URL", None)
-    client_kwargs = {"api_key": api_key}
-    if base_url:
-        client_kwargs["base_url"] = base_url
-
-    return OpenAI(**client_kwargs), None
+    client = Mistral(api_key=api_key)
+    return client, None
 
 
 def _empty_report(reason: str = "") -> Dict[str, str]:
@@ -171,14 +167,14 @@ def generate_market_report(cleaned_text: str) -> Dict[str, str]:
     if error:
         return _empty_report(error)
 
-    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    model = os.getenv("MISTRAL_MODEL", "") or os.getenv("OPENAI_MODEL", "mistral-small-latest")
 
     print("\n" + "=" * 80)
     print("🤖 LLM MARKET ANALYSIS — START")
     print("=" * 80)
     print(f"\n📤 SENDING TO LLM:")
     print(f"   Model: {model}")
-    print(f"   Base URL: {os.getenv('OPENAI_BASE_URL', 'default')}")
+    print(f"   Provider: Mistral AI")
     print(f"   Input text: {len(cleaned_text):,} characters")
     print(f"   Temperature: 0.3")
     print(f"   Max tokens: 2500")
@@ -188,7 +184,7 @@ def generate_market_report(cleaned_text: str) -> Dict[str, str]:
     try:
         logger.info("Sending %d chars to LLM for report (model=%s).", len(cleaned_text), model)
 
-        response = client.chat.completions.create(
+        response = client.chat.complete(
             model=model,
             messages=[
                 {"role": "system", "content": REPORT_SYSTEM_PROMPT},
@@ -252,12 +248,12 @@ def answer_investor_question(cleaned_text: str, question: str) -> str:
     if error:
         return f"❌ {error}"
 
-    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    model = os.getenv("MISTRAL_MODEL", "") or os.getenv("OPENAI_MODEL", "mistral-small-latest")
 
     try:
         logger.info("Sending Q&A request to LLM (model=%s): '%s'", model, question[:80])
 
-        response = client.chat.completions.create(
+        response = client.chat.complete(
             model=model,
             messages=[
                 {"role": "system", "content": QA_SYSTEM_PROMPT},
@@ -326,12 +322,12 @@ def direct_llm_query(question: str) -> str:
     if error:
         return f"❌ {error}"
 
-    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    model = os.getenv("MISTRAL_MODEL", "") or os.getenv("OPENAI_MODEL", "mistral-small-latest")
 
     try:
         logger.info("Direct LLM query (model=%s): '%s'", model, question[:80])
 
-        response = client.chat.completions.create(
+        response = client.chat.complete(
             model=model,
             messages=[
                 {"role": "system", "content": DIRECT_QUERY_SYSTEM_PROMPT},
